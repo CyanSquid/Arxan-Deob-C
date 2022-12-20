@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <inttypes.h>
+#include <string.h>
 
 #include "array_util.h"
 #include "read_file.h"
@@ -187,7 +188,7 @@ static uintptr_t get_jmp_chain_target(const struct deob_context* context, const 
     return target;
 }
 
-static void skip_jmp_chains(const struct deob_context* context)
+static void skip_jmps(const struct deob_context* context)
 {
     uint8_t* addr = context->deob_begin;
     uint8_t* stop = context->deob_end;
@@ -203,21 +204,30 @@ static void skip_jmp_chains(const struct deob_context* context)
         const uintptr_t virtual_address = file_offset_to_virtual_address(context->deob_begin, (uint32_t)(addr - context->deob_begin));
         const uintptr_t initial_target = x64_calc_rel32(virtual_address + 1, *(int32_t*)(addr + 1), 0);
         const uintptr_t target = get_jmp_chain_target(context, addr);
+        const uint32_t target_file_offset = virtual_address_to_file_offset(context->deob_begin, target);
 
-        if (target == 0)
+        if ((target == 0) || (target_file_offset == UINT32_MAX))
         {
             addr++;
             continue;
         }
 
-        if (target == initial_target)
+        if (context->deob_begin[target_file_offset] == 0xC3)
+        {
+            memset(addr, 0x90, 5);
+            addr[0] = 0xC3;
+            fprintf(context->log_file, "Skipped 'jmp' into 'ret': %" PRIXPTR " -> %" PRIXPTR "\n", file_offset_to_virtual_address(context->deob_begin, (uint32_t)(addr - context->deob_begin)), target);
+        }
+        else if (target != initial_target)
+        {
+            x64_make_rel32_jmp(addr, virtual_address, target);
+            fprintf(context->log_file, "Skipped one or more 'jmp's: %" PRIXPTR " -> %" PRIXPTR "\n", file_offset_to_virtual_address(context->deob_begin, (uint32_t)(addr - context->deob_begin)), target);
+        } 
+        else
         {
             addr++;
             continue;
         }
-
-        x64_make_rel32_jmp(addr, virtual_address, target);
-        fprintf(context->log_file, "Skipped one or more 'jmp's: %" PRIXPTR " -> %" PRIXPTR "\n", file_offset_to_virtual_address(context->deob_begin, (uint32_t)(addr - context->deob_begin)), target);
 
         addr += 5;
     }
@@ -227,7 +237,7 @@ static void deobfuscate(const struct deob_context* const context)
 {
     find_and_deobfuscate(context, obfuscation_patterns_stage_1, ARRAY_SIZE(obfuscation_patterns_stage_1));
     find_and_deobfuscate(context, obfuscation_patterns_stage_2, ARRAY_SIZE(obfuscation_patterns_stage_2));
-    skip_jmp_chains(context);
+    skip_jmps(context);
 }
 
 int main(int argc, char** argv)
