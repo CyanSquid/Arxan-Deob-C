@@ -6,4 +6,3 @@ I will be cleaning it up
 
 ## Todo:
 - Clean up the code...
-- Implement deobfuscation for obfuscated `mov` instructions.
