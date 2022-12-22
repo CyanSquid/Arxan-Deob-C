@@ -12,6 +12,8 @@ add_executable(arxandeobc
     "src/win32_util.c"
     "src/pattern.h" 
     "src/deob_context.h"
+    "src/obfuscation_handler_mov.h"
+    "src/obfuscation_handler_mov.c"
     "src/obfuscation_handler_push_pop.h" 
     "src/obfuscation_handler_push_pop.c" 
     "src/obfuscation_handler_jmp.h" 

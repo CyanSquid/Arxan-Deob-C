@@ -11,6 +11,7 @@
 #include "x64_util.h"
 
 #include "deob_context.h"
+#include "obfuscation_handler_mov.h"
 #include "obfuscation_handler_push_pop.h"
 #include "obfuscation_handler_jmp.h"
 #include "obfuscation_handler_cjmp.h"
@@ -69,6 +70,30 @@ static const struct pattern_info obfuscation_patterns_stage_2[] =
         "'cjmp'",
         obfuscation_pattern_cjmp,
         obfuscation_handler_cjmp
+    },
+
+    {
+        "'mov'",
+        obfuscation_pattern_mov_rr,
+        obfuscation_handler_mov_rr
+    },
+
+    {
+        "'mov'",
+        obfuscation_pattern_mov_ee,
+        obfuscation_handler_mov_ee
+    },
+
+    {
+        "'mov'",
+        obfuscation_pattern_mov_re,
+        obfuscation_handler_mov_re
+    },
+
+    {
+        "'mov'",
+        obfuscation_pattern_mov_er,
+        obfuscation_handler_mov_er
     },
 };
 
